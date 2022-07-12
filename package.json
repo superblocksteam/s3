@@ -1,6 +1,6 @@
 {
   "name": "@superblocksteam/s3",
-  "version": "0.1692.0",
+  "version": "0.1747.0",
   "description": "Superblocks S3 Plugin",
   "publishConfig": {
     "registry": "https://npm.pkg.github.com"
@@ -27,7 +27,8 @@
     "@superblocksteam/shared-backend": "^0.x",
     "aws-sdk": "2.1084.0",
     "lodash": "4.17.21",
-    "minimist": "1.2.6"
+    "minimist": "1.2.6",
+    "deasync": "0.1.26"
   },
   "devDependencies": {
     "@types/lodash": "^4.14.170",

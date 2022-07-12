@@ -1,4 +1,3 @@
-import fs from 'fs';
 import {
   DatasourceMetadataDto,
   DEFAULT_S3_PRESIGNED_URL_EXPIRATION_SECONDS,
@@ -12,8 +11,7 @@ import {
   S3ActionType,
   S3DatasourceConfiguration
 } from '@superblocksteam/shared';
-import { BasePlugin, PluginExecutionProps } from '@superblocksteam/shared-backend';
-import { RequestFile } from '@superblocksteam/shared-backend';
+import { BasePlugin, PluginExecutionProps, RequestFile, getFileStream } from '@superblocksteam/shared-backend';
 import { S3, STS } from 'aws-sdk';
 import { DeleteObjectRequest, GetObjectRequest, ListObjectsRequest, PutObjectRequest } from 'aws-sdk/clients/s3';
 
@@ -98,22 +96,29 @@ export default class S3Plugin extends BasePlugin {
           throw new IntegrationError(`File objects must be an array of JSON objects.`);
         }
 
-        const contents = filesWithContents.map((file: unknown) => {
-          if (!isReadableFile(file)) {
-            if (isReadableFileConstructor(file)) {
-              return file.contents;
+        const contents = await Promise.all(
+          filesWithContents.map(async (file: unknown) => {
+            if (!isReadableFile(file)) {
+              if (isReadableFileConstructor(file)) {
+                return file.contents;
+              }
+
+              throw new IntegrationError('Cannot read files. Files can either be Superblocks files or { name: string; contents: string }.');
             }
 
-            throw new IntegrationError('Cannot read files. Files can either be Superblocks files or { name: string; contents: string }.');
-          }
+            const match = (files as Array<RequestFile>).find((f) => f.filename.startsWith(`${file.$superblocksId}_`));
+            if (!match) {
+              throw new IntegrationError(`Could not locate file ${file.name}`);
+            }
 
-          const match = (files as Array<RequestFile>).find((f) => f.filename === file.$superblocksId);
-          if (!match) {
-            throw new IntegrationError(`Could not locate file contents for file ${file.name}`);
-          }
-          // S3 supports streams as input, this is preferred to reading into memory for large files
-          return fs.createReadStream(match.path);
-        });
+            try {
+              // S3 supports streams as input, this is preferred to reading into memory for large files
+              return await getFileStream(context, match.path);
+            } catch (_) {
+              throw new IntegrationError(`Could not retrieve file ${file.name} from controller.`);
+            }
+          })
+        );
 
         const data = await this.uploadMultiple(
           s3Client,
