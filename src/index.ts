@@ -11,7 +11,7 @@ import {
   S3ActionType,
   S3DatasourceConfiguration
 } from '@superblocksteam/shared';
-import { BasePlugin, PluginExecutionProps, RequestFile, getFileStream } from '@superblocksteam/shared-backend';
+import { BasePlugin, PluginExecutionProps, RequestFile, getFileStream, getAwsClientConfig } from '@superblocksteam/shared-backend';
 import { S3, STS } from 'aws-sdk';
 import { DeleteObjectRequest, GetObjectRequest, ListObjectsRequest, PutObjectRequest } from 'aws-sdk/clients/s3';
 
@@ -202,16 +202,8 @@ export default class S3Plugin extends BasePlugin {
   }
 
   private getS3Client(datasourceConfig: S3DatasourceConfiguration): S3 {
-    const s3Client = new S3(this.getAwsConfig(datasourceConfig));
+    const s3Client = new S3(getAwsClientConfig(datasourceConfig));
     return s3Client;
-  }
-
-  private getAwsConfig(datasourceConfig: S3DatasourceConfiguration) {
-    return {
-      region: datasourceConfig.authentication?.custom?.region?.value,
-      accessKeyId: datasourceConfig.authentication?.custom?.accessKeyID?.value,
-      secretAccessKey: datasourceConfig.authentication?.custom?.secretKey?.value
-    };
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -255,7 +247,7 @@ export default class S3Plugin extends BasePlugin {
 
   async test(datasourceConfiguration: S3DatasourceConfiguration): Promise<void> {
     try {
-      const stsClient = new STS(this.getAwsConfig(datasourceConfiguration));
+      const stsClient = new STS(getAwsClientConfig(datasourceConfiguration));
       // This call will work with any valid AWS credentials, regardless of permissions
       // Ref: https://docs.aws.amazon.com/cli/latest/reference/sts/get-caller-identity.html
       await stsClient.getCallerIdentity().promise();
