@@ -123,7 +123,7 @@ export default class S3Plugin extends BasePlugin {
         const data = await this.uploadMultiple(
           s3Client,
           filesWithContents.map((file, i) => ({
-            Bucket: configuration.resource,
+            Bucket: configuration.resource ?? '',
             Key: file.name,
             Body: contents[i]
           }))
@@ -131,14 +131,14 @@ export default class S3Plugin extends BasePlugin {
         ret.output = await Promise.all(
           data.map(async (entry: { Key: string }) => ({
             ...entry,
-            presignedURL: await this.generateSignedURL(s3Client, configuration.resource, entry.Key)
+            presignedURL: await this.generateSignedURL(s3Client, configuration.resource ?? '', entry.Key)
           }))
         );
       } else if (s3Action === S3ActionType.GENERATE_PRESIGNED_URL) {
         ret.output = await this.generateSignedURL(
           s3Client,
-          configuration.resource,
-          configuration.path,
+          configuration.resource ?? '',
+          configuration.path ?? '',
           Number(configuration.custom?.presignedExpiration?.value)
         );
       }
@@ -151,7 +151,7 @@ export default class S3Plugin extends BasePlugin {
   getRequest(actionConfiguration: S3ActionConfiguration): RawRequest {
     const configuration = actionConfiguration;
     const s3Action = configuration.action;
-    let s3ReqString = `Action: ${S3_ACTION_DISPLAY_NAMES[s3Action]}`;
+    let s3ReqString = `Action: ${S3_ACTION_DISPLAY_NAMES[s3Action ?? '']}`;
     if (s3Action === S3ActionType.LIST_OBJECTS) {
       s3ReqString += `\nBucket: ${configuration.resource}`;
     } else if (s3Action === S3ActionType.GET_OBJECT) {
