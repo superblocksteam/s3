@@ -69,12 +69,15 @@ export default class S3Plugin extends BasePlugin {
         if (!configuration.path) {
           throw new IntegrationError('Path required for upload objects');
         }
-        const data = await this.upload(s3Client, {
+        const putObjectRequest: PutObjectRequest = {
           Bucket: configuration.resource,
           Key: configuration.path,
           Body: configuration.body
-        });
-
+        };
+        if (files && files.length == 1) {
+          putObjectRequest.ContentType = files[0].mimetype;
+        }
+        const data = await this.upload(s3Client, putObjectRequest);
         data.presignedURL = await this.generateSignedURL(s3Client, configuration.resource, configuration.path);
         ret.output = data;
       } else if (s3Action === S3ActionType.UPLOAD_MULTIPLE_OBJECTS) {
@@ -125,7 +128,8 @@ export default class S3Plugin extends BasePlugin {
           filesWithContents.map((file, i) => ({
             Bucket: configuration.resource ?? '',
             Key: file.name,
-            Body: contents[i]
+            Body: contents[i],
+            ContentType: file.type
           }))
         );
         ret.output = await Promise.all(
