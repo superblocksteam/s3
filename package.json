@@ -1,6 +1,6 @@
 {
   "name": "@superblocksteam/s3",
-  "version": "0.2529.0",
+  "version": "0.2534.0",
   "description": "Superblocks S3 Plugin",
   "publishConfig": {
     "registry": "https://npm.pkg.github.com"
